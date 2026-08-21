@@ -1,0 +1,9 @@
+.git
+.next
+.vinext
+node_modules
+work
+outputs
+coverage
+*.tsbuildinfo
+*.log
