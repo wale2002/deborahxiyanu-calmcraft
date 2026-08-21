@@ -14,18 +14,20 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+html { max-width: 100%; overflow-x: hidden; scroll-behavior: smooth; scroll-padding-top: 72px; }
 body {
+  max-width: 100%;
   margin: 0;
+  overflow-x: hidden;
   background: var(--paper);
   color: var(--ink);
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
-button, input, select, textarea { color: inherit; font: inherit; }
+button, input, select, textarea { min-width: 0; color: inherit; font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; }
-img, video { max-width: 100%; }
+img, video { max-width: 100%; height: auto; }
 svg { display: block; }
 ::selection { background: var(--blush); color: var(--wine-dark); }
 
@@ -295,6 +297,7 @@ h1 span { font-style: italic; }
 .queueSummary { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: .65rem; letter-spacing: .08em; text-transform: uppercase; }
 .queueSummary span { color: rgba(44,39,37,.58); }
 .queueItem { position: relative; display: grid; grid-template-columns: 42px 1fr auto; gap: 12px; align-items: center; min-height: 65px; overflow: hidden; border-top: 1px solid var(--line); }
+.queueItem > div { min-width: 0; }
 .fileType { display: grid; height: 32px; place-items: center; background: var(--paper-deep); color: var(--wine); font-size: .55rem; font-weight: 700; letter-spacing: .08em; }
 .queueItem strong, .queueItem small { display: block; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .queueItem strong { font-size: .76rem; }
@@ -400,22 +403,26 @@ h1 span { font-style: italic; }
   .timelineSection { grid-template-columns: 90px .8fr 1fr; gap: 4vw; padding-right: 5vw; padding-left: 5vw; }
   .uploadDialog { grid-template-columns: .72fr 1.28fr; }
   .footerTop { grid-template-columns: .5fr 1fr .5fr; }
+  .mediaButtons { flex-wrap: wrap; }
+  .mediaButtons .deleteButton { margin-left: 0; }
 }
 
 @media (max-width: 760px) {
   html { scroll-padding-top: 10px; }
-  body { padding-bottom: 66px; }
+  .homePage { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
   .hero { min-height: auto; border-width: 6px; padding-bottom: 42px; }
   .nav { min-height: 68px; padding: 12px 14px; }
   .wordmark strong, .navItems a:not(.navShare) { display: none; }
   .navShare { padding: 11px 12px; font-size: .56rem; }
-  .heroContent { width: auto; padding: 72px 18px 35px; }
-  h1 { font-size: clamp(3.65rem, 17.5vw, 6rem); }
+  .heroContent { width: auto; padding: 56px 18px 35px; }
+  h1 { font-size: clamp(3rem, 16vw, 6rem); }
+  .hero h1, .galleryHero h1, .loginForm h1 { overflow-wrap: anywhere; }
   .intro { max-width: 90%; font-size: 1rem; }
   .heroActions { align-items: flex-start; flex-direction: column; gap: 20px; }
   .portraitWrap { position: relative; top: auto; right: auto; width: calc(100% - 52px); margin: 16px auto 84px; }
   .portraitNote { right: -7px; }
-  .heroFoot { right: 18px; bottom: 21px; left: 18px; gap: 14px; line-height: 1.5; }
+  .heroFoot { right: 18px; bottom: 21px; left: 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; line-height: 1.5; }
+  .heroFoot span:last-child { text-align: right; }
   .storySection { display: block; min-height: auto; padding: 85px 24px 125px; }
   .sectionIndex { width: 120px; margin-bottom: 50px; }
   .storyCopy h2, .sectionHeading h2, .timelineSection h2, .uploadIntro h2, .magazineCopy h2 { font-size: clamp(3.35rem, 14vw, 5rem); }
@@ -429,18 +436,22 @@ h1 span { font-style: italic; }
   .menuNote { margin-top: 25px; line-height: 1.5; text-align: left; }
   .timelineSection { display: block; padding: 85px 24px; }
   .timeline { margin-top: 55px; }
-  .timeline li { grid-template-columns: 32px 85px 1fr; }
+  .timeline li { grid-template-columns: 32px 82px minmax(0, 1fr); }
   .timeline strong { font-size: 1rem; }
-  .uploadModalBackdrop { align-items: end; padding: 0; }
-  .uploadDialog { display: block; width: 100%; max-height: 94svh; border-radius: 18px 18px 0 0; }
-  .uploadIntro { padding: 42px 24px 28px; }
+  .uploadModalBackdrop { align-items: end; padding: 0; overscroll-behavior: contain; }
+  .uploadDialog { display: block; width: 100%; height: 100dvh; max-height: 100dvh; border-radius: 0; overscroll-behavior: contain; }
+  .uploadClose { top: max(12px, env(safe-area-inset-top)); right: 14px; width: 44px; height: 44px; }
+  .uploadIntro { padding: calc(42px + env(safe-area-inset-top)) 24px 28px; }
   .uploadDialog .uploadIntro h2 { margin: 14px 0 18px; font-size: clamp(3rem, 14vw, 4.5rem); }
   .uploadIntro > p:not(.eyebrow) { margin-bottom: 0; font-size: 1rem; }
   .privacyNote { margin-top: 24px; padding-top: 18px; }
-  .uploadForm { min-height: 0; padding: 28px 20px 34px; }
+  .uploadForm { min-height: 0; padding: 28px 20px calc(34px + env(safe-area-inset-bottom)); }
   .fieldRow { grid-template-columns: 1fr; gap: 25px; }
   .dropzone { min-height: 175px; margin-top: 22px; }
+  .queueItem { grid-template-columns: 38px minmax(0, 1fr) auto; gap: 10px; }
   .consentField { font-size: .65rem; }
+  .successActions { width: 100%; flex-wrap: wrap; justify-content: center; }
+  .successActions .secondaryButton { flex: 1 1 140px; }
   .magazineSection { display: flex; flex-direction: column-reverse; gap: 80px; padding: 100px 24px; }
   .magazineCopy { width: 100%; }
   .magazineStack { width: min(340px, 78vw); }
@@ -448,28 +459,53 @@ h1 span { font-style: italic; }
   .keepsakeDetails div { display: grid; grid-template-columns: 35px 1fr; gap: 0 10px; align-items: baseline; padding: 18px 0; border-bottom: 1px solid var(--line); }
   .keepsakeDetails strong { margin: 0; }
   .keepsakeDetails small { grid-column: 2; }
-  .footer { padding: 55px 24px 20px; }
+  .footer { padding: 55px 24px calc(20px + env(safe-area-inset-bottom)); }
   .footerTop { display: flex; min-height: 300px; align-items: flex-start; flex-direction: column; }
   .footerTop > p { margin: auto 0; text-align: left; }
   .footerLinks { align-items: flex-start; }
   .footerLinks a { justify-content: flex-start; }
   .footerBottom { align-items: flex-start; flex-direction: column; gap: 10px; line-height: 1.5; }
-  .mobileUpload { position: fixed; z-index: 20; right: 12px; bottom: 10px; left: 12px; display: flex; height: 52px; align-items: center; justify-content: center; gap: 10px; border: 0; background: var(--wine); box-shadow: 0 10px 30px rgba(39,20,25,.32); color: white; cursor: pointer; font-family: inherit; font-size: .66rem; font-weight: 700; letter-spacing: .12em; text-decoration: none; text-transform: uppercase; }
+  .mobileUpload { position: fixed; z-index: 20; right: 12px; bottom: max(10px, env(safe-area-inset-bottom)); left: 12px; display: flex; height: 52px; align-items: center; justify-content: center; gap: 10px; border: 0; background: var(--wine); box-shadow: 0 10px 30px rgba(39,20,25,.32); color: white; cursor: pointer; font-family: inherit; font-size: .66rem; font-weight: 700; letter-spacing: .12em; text-decoration: none; text-transform: uppercase; }
   .mobileUpload svg { width: 18px; }
   .galleryHeader { padding: 17px 20px; }
   .galleryHeader .wordmark strong { display: block; }
   .loginWrap { display: block; }
-  .loginImage { min-height: 38svh; background-position: center 33%; }
-  .loginPanel { min-height: 62svh; padding: 55px 24px; }
+  .loginImage { min-height: 36svh; background-position: center 33%; }
+  .loginPanel { min-height: auto; padding: 48px 24px 64px; }
   .galleryHero { display: block; padding: 65px 24px 35px; }
+  .galleryHero h1 { font-size: clamp(3rem, 15vw, 5.5rem); }
   .galleryHero > p { margin-top: 28px; }
   .galleryToolbar { align-items: flex-start; flex-direction: column; margin: 0 24px 30px; }
+  .filterTabs button, .galleryActions button { min-height: 44px; }
   .galleryActions { width: 100%; justify-content: space-between; }
-  .mediaGrid { columns: 2 145px; column-gap: 8px; padding: 0 8px 80px; }
-  .mediaCard { margin-bottom: 8px; }
-  .mediaMeta { padding: 10px; }
-  .mediaButtons { gap: 5px; padding: 0 10px 10px; }
-  .mediaButtons button, .mediaButtons a { min-height: 32px; padding: 0 7px; font-size: .5rem; }
+  .mediaGrid { columns: 1; padding: 0 12px 64px; }
+  .mediaCard { margin-bottom: 12px; }
+  .mediaMeta { padding: 14px; }
+  .mediaButtons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 14px 14px; }
+  .mediaButtons button, .mediaButtons a { min-height: 42px; padding: 0 10px; font-size: .56rem; }
+  .mediaButtons button:first-child { grid-column: 1 / -1; }
+  .mediaButtons .deleteButton { margin-left: 0; }
+  .galleryEmpty { margin: 40px 24px 80px; padding: 55px 20px; }
+}
+
+@media (max-width: 380px) {
+  .nav { gap: 8px; }
+  .wordmark span { font-size: 1.2rem; }
+  .navShare { padding: 10px; letter-spacing: .1em; }
+  .heroContent { padding-right: 12px; padding-left: 12px; }
+  .hero h1 { font-size: clamp(2.85rem, 15.5vw, 3.7rem); }
+  .heroFoot { grid-template-columns: 1fr; }
+  .heroFoot span:last-child { text-align: left; }
+  .storySection, .menuSection, .timelineSection, .magazineSection { padding-right: 18px; padding-left: 18px; }
+  .storyCopy h2, .sectionHeading h2, .timelineSection h2, .uploadIntro h2, .magazineCopy h2 { font-size: clamp(2.85rem, 13.5vw, 4rem); }
+  .timeline li { grid-template-columns: 28px 75px minmax(0, 1fr); gap: 8px; }
+  .uploadIntro { padding-right: 18px; padding-left: 18px; }
+  .uploadForm { padding-right: 16px; padding-left: 16px; }
+  .dropzone { padding: 20px 12px; }
+  .galleryHeader { gap: 12px; padding-right: 16px; padding-left: 16px; }
+  .galleryHeader > a { max-width: 120px; line-height: 1.4; text-align: right; }
+  .galleryHero, .loginPanel { padding-right: 18px; padding-left: 18px; }
+  .galleryToolbar { margin-right: 18px; margin-left: 18px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

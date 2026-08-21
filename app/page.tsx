@@ -75,7 +75,7 @@ function ArrowIcon() {
 
 export default function Home() {
   return (
-    <main>
+    <main className="homePage">
       <section className="hero" id="top">
         <nav className="nav" aria-label="Wedding navigation">
           <a className="wordmark" href="#top" aria-label="Deborah and Iyanuoluwa home">
