@@ -152,9 +152,10 @@ export async function setMagazineSelection(
   if (!publicId.startsWith(`${WEDDING_FOLDER}/`)) throw new Error("Invalid asset");
   const timestamp = Math.floor(Date.now() / 1000);
   const command = selected ? "add" : "remove";
-  const params = { public_ids: publicId, tag: MAGAZINE_TAG, timestamp };
+  const params = { command, public_ids: publicId, tag: MAGAZINE_TAG, timestamp };
   const signature = await signCloudinaryParams(params, config.apiSecret);
   const form = new URLSearchParams({
+    command,
     public_ids: publicId,
     tag: MAGAZINE_TAG,
     timestamp: String(timestamp),
@@ -162,7 +163,7 @@ export async function setMagazineSelection(
     signature,
   });
   const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${config.cloudName}/${resourceType}/tags/${command}`,
+    `https://api.cloudinary.com/v1_1/${config.cloudName}/${resourceType}/tags`,
     { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: form },
   );
   if (!response.ok) throw new Error(`Could not update magazine selection (${response.status})`);

@@ -59,6 +59,14 @@ test("gallery reads sign out quietly and deletion stays authenticated and scoped
   assert.match(galleryPage, /Delete this moment permanently\?/);
 });
 
+test("magazine shortlist uses Cloudinary's signed tags command endpoint", async () => {
+  const cloudinary = await readFile(new URL("app/lib/cloudinary.ts", root), "utf8");
+  assert.match(cloudinary, /const params = \{ command, public_ids: publicId, tag: MAGAZINE_TAG, timestamp \}/);
+  assert.match(cloudinary, /new URLSearchParams\(\{\s*command,/);
+  assert.match(cloudinary, /\$\{resourceType\}\/tags`/);
+  assert.equal(cloudinary.includes("/tags/${command}"), false);
+});
+
 test("repository ignores local environment files but keeps the example", async () => {
   const ignore = await readFile(new URL(".gitignore", root), "utf8");
   assert.match(ignore, /^\.env\*/m);
