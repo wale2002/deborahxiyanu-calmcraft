@@ -8,6 +8,8 @@ type CloudinaryConfig = {
   uploadPreset: string;
 };
 
+type CloudinaryUploadConfig = Pick<CloudinaryConfig, "cloudName" | "uploadPreset">;
+
 export type GalleryAsset = {
   id: string;
   publicId: string;
@@ -33,6 +35,13 @@ export function cloudinaryConfig(): CloudinaryConfig | null {
   const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
   if (!cloudName || !apiKey || !apiSecret || !uploadPreset) return null;
   return { cloudName, apiKey, apiSecret, uploadPreset };
+}
+
+export function cloudinaryUploadConfig(): CloudinaryUploadConfig | null {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
+  if (!cloudName || !uploadPreset) return null;
+  return { cloudName, uploadPreset };
 }
 
 export function sanitizeContext(value: unknown, maxLength: number) {

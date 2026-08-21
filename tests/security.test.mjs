@@ -10,6 +10,16 @@ test("secrets are excluded from the browser upload component", async () => {
   assert.equal(component.includes("CLOUDINARY_API_KEY="), false);
 });
 
+test("guest uploads require only a selected file", async () => {
+  const component = await readFile(new URL("app/components/UploadMoment.tsx", root), "utf8");
+  const route = await readFile(new URL("app/api/uploads/sign/route.ts", root), "utf8");
+  assert.equal(component.includes("Please tell us your name"), false);
+  assert.equal(component.includes("if (!consent)"), false);
+  assert.equal(route.includes("A guest name is required"), false);
+  assert.equal(route.includes("signature"), false);
+  assert.equal(route.includes("apiKey"), false);
+});
+
 test("gallery sessions use HTTP-only cookies", async () => {
   const auth = await readFile(new URL("app/lib/gallery-auth.ts", root), "utf8");
   assert.match(auth, /httpOnly:\s*true/);

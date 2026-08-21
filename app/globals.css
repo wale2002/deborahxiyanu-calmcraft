@@ -73,7 +73,7 @@ svg { display: block; }
 .navItems a { text-decoration: none; }
 .navItems a:not(.navShare) { padding: 8px 0; border-bottom: 1px solid transparent; }
 .navItems a:not(.navShare):hover { border-color: currentColor; }
-.navShare { padding: 13px 17px; border: 1px solid var(--wine); color: var(--wine); }
+.navShare { padding: 13px 17px; border: 1px solid var(--wine); background: transparent; color: var(--wine); cursor: pointer; font: inherit; text-transform: inherit; }
 .heroContent {
   position: relative;
   z-index: 3;
@@ -186,8 +186,13 @@ h1 span { font-style: italic; }
   align-items: center;
   gap: 16px;
   margin-top: 22px;
+  border: 0;
   border-bottom: 1px solid currentColor;
   padding-bottom: 7px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.13em;
@@ -240,8 +245,12 @@ h1 span { font-style: italic; }
 .timeline time { color: var(--wine); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.11em; }
 .timeline strong { font-family: var(--serif); font-size: 1.2rem; font-weight: 400; }
 
-.uploadSection { display: grid; grid-template-columns: 0.78fr 1.22fr; gap: 8vw; padding: 125px 7vw; background: var(--wine-dark); color: var(--white); }
-.uploadIntro { align-self: start; position: sticky; top: 50px; }
+.uploadModalBackdrop { position: fixed; z-index: 100; inset: 0; display: grid; overflow: auto; place-items: center; padding: 24px; background: rgba(25,10,15,.82); backdrop-filter: blur(7px); }
+.uploadDialog { position: relative; display: grid; width: min(1080px, 100%); max-height: calc(100svh - 48px); grid-template-columns: .78fr 1.22fr; overflow: auto; background: var(--wine-dark); color: var(--white); box-shadow: 0 35px 110px rgba(20,6,11,.5); }
+.uploadClose { position: absolute; z-index: 2; top: 16px; right: 18px; display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid rgba(111,48,64,.3); border-radius: 50%; background: rgba(255,255,255,.92); color: var(--wine); cursor: pointer; font-family: var(--serif); font-size: 1.6rem; line-height: 1; }
+.uploadClose:disabled { cursor: wait; opacity: .5; }
+.uploadIntro { align-self: stretch; padding: 65px 45px 50px; }
+.uploadDialog .uploadIntro h2 { font-size: clamp(3.4rem, 5.6vw, 5.8rem); }
 .uploadIntro h2 { margin-bottom: 30px; }
 .uploadIntro h2 em { color: var(--blush); }
 .uploadIntro > p:not(.eyebrow) { max-width: 500px; font-family: var(--serif); font-size: 1.15rem; line-height: 1.6; }
@@ -249,7 +258,9 @@ h1 span { font-style: italic; }
 .privacyNote > span { color: var(--blush); }
 .privacyNote p { margin: 0; color: rgba(255,255,255,.7); font-size: .75rem; line-height: 1.6; }
 .privacyNote strong { display: block; margin-bottom: 3px; color: var(--white); font-size: .65rem; letter-spacing: .13em; text-transform: uppercase; }
-.uploadForm { min-height: 620px; padding: clamp(26px, 4vw, 58px); background: var(--white); color: var(--ink); }
+.uploadForm { min-height: 620px; padding: clamp(46px, 5vw, 68px) clamp(26px, 4vw, 58px); background: var(--white); color: var(--ink); }
+.quickUploadHeading h3 { margin: 13px 0 7px; font-family: var(--serif); font-size: clamp(1.9rem, 3.5vw, 3rem); font-weight: 400; letter-spacing: -.035em; }
+.quickUploadHeading > p:last-child { margin: 0; color: rgba(44,39,37,.58); font-size: .75rem; }
 .fieldRow { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .fieldRow label > span, .messageField > span { display: block; margin-bottom: 10px; font-size: .63rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
 .uploadForm input[type="text"], .uploadForm input:not([type]), .uploadForm select, .uploadForm textarea {
@@ -301,11 +312,14 @@ h1 span { font-style: italic; }
 .formNotice { color: var(--wine); }
 .submitButton { display: flex; width: 100%; min-height: 58px; align-items: center; justify-content: space-between; margin-top: 28px; padding: 0 23px; background: var(--wine); color: #fff; }
 .submitButton:disabled { cursor: wait; opacity: .65; }
+.uploadPermission { margin: 12px auto 0; max-width: 460px; color: rgba(44,39,37,.5); font-size: .61rem; line-height: 1.5; text-align: center; }
 .uploadSuccess { display: flex; min-height: 500px; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
 .uploadSuccess > span { display: grid; width: 66px; height: 66px; place-items: center; margin-bottom: 28px; border-radius: 50%; background: var(--wine); color: white; font-family: var(--serif); font-size: 1.8rem; }
 .uploadSuccess h3 { margin: 17px 0; font-family: var(--serif); font-size: clamp(2.4rem, 5vw, 4rem); font-weight: 400; letter-spacing: -.04em; }
 .uploadSuccess > p:not(.eyebrow) { max-width: 420px; font-family: var(--serif); line-height: 1.55; }
 .secondaryButton { min-height: 48px; margin-top: 22px; padding: 0 20px; border: 1px solid var(--wine); background: transparent; color: var(--wine); }
+.successActions { display: flex; gap: 10px; }
+.solidButton { background: var(--wine); color: #fff; }
 
 .magazineSection { display: grid; grid-template-columns: .9fr 1.1fr; gap: 9vw; align-items: center; padding: 150px 9vw; overflow: hidden; }
 .magazineStack { position: relative; width: min(430px, 75vw); aspect-ratio: .75; margin: auto; }
@@ -380,7 +394,7 @@ h1 span { font-style: italic; }
   .portraitWrap { right: 2vw; width: 38vw; }
   .storySection { grid-template-columns: 90px 1.05fr .8fr; gap: 4vw; padding-right: 5vw; padding-left: 5vw; }
   .timelineSection { grid-template-columns: 90px .8fr 1fr; gap: 4vw; padding-right: 5vw; padding-left: 5vw; }
-  .uploadSection { gap: 5vw; padding-right: 5vw; padding-left: 5vw; }
+  .uploadDialog { grid-template-columns: .72fr 1.28fr; }
   .footerTop { grid-template-columns: .5fr 1fr .5fr; }
 }
 
@@ -413,11 +427,15 @@ h1 span { font-style: italic; }
   .timeline { margin-top: 55px; }
   .timeline li { grid-template-columns: 32px 85px 1fr; }
   .timeline strong { font-size: 1rem; }
-  .uploadSection { display: block; padding: 85px 16px; }
-  .uploadIntro { position: static; padding: 0 8px 45px; }
-  .uploadForm { min-height: 560px; padding: 26px 20px; }
+  .uploadModalBackdrop { align-items: end; padding: 0; }
+  .uploadDialog { display: block; width: 100%; max-height: 94svh; border-radius: 18px 18px 0 0; }
+  .uploadIntro { padding: 42px 24px 28px; }
+  .uploadDialog .uploadIntro h2 { margin: 14px 0 18px; font-size: clamp(3rem, 14vw, 4.5rem); }
+  .uploadIntro > p:not(.eyebrow) { margin-bottom: 0; font-size: 1rem; }
+  .privacyNote { margin-top: 24px; padding-top: 18px; }
+  .uploadForm { min-height: 0; padding: 28px 20px 34px; }
   .fieldRow { grid-template-columns: 1fr; gap: 25px; }
-  .dropzone { min-height: 190px; margin-top: 30px; }
+  .dropzone { min-height: 175px; margin-top: 22px; }
   .consentField { font-size: .65rem; }
   .magazineSection { display: flex; flex-direction: column-reverse; gap: 80px; padding: 100px 24px; }
   .magazineCopy { width: 100%; }
@@ -431,7 +449,7 @@ h1 span { font-style: italic; }
   .footerTop > p { margin: auto 0; text-align: left; }
   .footerTop > a { justify-content: flex-start; }
   .footerBottom { align-items: flex-start; flex-direction: column; gap: 10px; line-height: 1.5; }
-  .mobileUpload { position: fixed; z-index: 20; right: 12px; bottom: 10px; left: 12px; display: flex; height: 52px; align-items: center; justify-content: center; gap: 10px; background: var(--wine); box-shadow: 0 10px 30px rgba(39,20,25,.32); color: white; font-size: .66rem; font-weight: 700; letter-spacing: .12em; text-decoration: none; text-transform: uppercase; }
+  .mobileUpload { position: fixed; z-index: 20; right: 12px; bottom: 10px; left: 12px; display: flex; height: 52px; align-items: center; justify-content: center; gap: 10px; border: 0; background: var(--wine); box-shadow: 0 10px 30px rgba(39,20,25,.32); color: white; cursor: pointer; font-family: inherit; font-size: .66rem; font-weight: 700; letter-spacing: .12em; text-decoration: none; text-transform: uppercase; }
   .mobileUpload svg { width: 18px; }
   .galleryHeader { padding: 17px 20px; }
   .galleryHeader .wordmark strong { display: block; }

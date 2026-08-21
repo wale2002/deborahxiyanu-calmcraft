@@ -1,6 +1,14 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useMemo, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 type UploadState = {
   file: File;
@@ -9,20 +17,35 @@ type UploadState = {
   error?: string;
 };
 
-type SignResponse = {
+type UploadConfig = {
   cloudName: string;
-  apiKey: string;
-  timestamp: number;
-  signature: string;
   uploadPreset: string;
   folder: string;
   tags: string;
-  context: string;
 };
 
+const OPEN_UPLOAD_EVENT = "calmcraft:open-upload";
 const MAX_FILES = 8;
 const IMAGE_LIMIT = 15 * 1024 * 1024;
-const VIDEO_LIMIT = 150 * 1024 * 1024;
+const VIDEO_LIMIT = 95 * 1024 * 1024;
+
+export function ShareMomentButton({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className={className}
+      onClick={() => window.dispatchEvent(new Event(OPEN_UPLOAD_EVENT))}
+    >
+      {children}
+    </button>
+  );
+}
 
 function CameraIcon() {
   return (
@@ -38,46 +61,49 @@ function prettyBytes(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function uploadToCloudinary(file: File, signed: SignResponse, onProgress: (value: number) => void) {
+function cloudinaryError(request: XMLHttpRequest) {
+  try {
+    const payload = JSON.parse(request.responseText) as { error?: { message?: string } };
+    return payload.error?.message || `Upload failed (${request.status})`;
+  } catch {
+    return `Upload failed (${request.status})`;
+  }
+}
+
+function uploadToCloudinary(
+  file: File,
+  config: UploadConfig,
+  onProgress: (value: number) => void,
+) {
   return new Promise<void>((resolve, reject) => {
     const form = new FormData();
     form.append("file", file);
-    form.append("api_key", signed.apiKey);
-    form.append("timestamp", String(signed.timestamp));
-    form.append("signature", signed.signature);
-    form.append("upload_preset", signed.uploadPreset);
-    form.append("folder", signed.folder);
-    form.append("tags", signed.tags);
-    form.append("context", signed.context);
+    form.append("upload_preset", config.uploadPreset);
+    form.append("folder", config.folder);
+    form.append("tags", config.tags);
 
     const request = new XMLHttpRequest();
-    request.open("POST", `https://api.cloudinary.com/v1_1/${signed.cloudName}/auto/upload`);
+    request.open("POST", `https://api.cloudinary.com/v1_1/${config.cloudName}/auto/upload`);
     request.upload.addEventListener("progress", (event) => {
       if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
     });
     request.addEventListener("load", () => {
       if (request.status >= 200 && request.status < 300) resolve();
-      else {
-        try {
-          const payload = JSON.parse(request.responseText) as { error?: { message?: string } };
-          reject(new Error(payload.error?.message || "Upload failed"));
-        } catch {
-          reject(new Error("Upload failed"));
-        }
-      }
+      else reject(new Error(cloudinaryError(request)));
     });
-    request.addEventListener("error", () => reject(new Error("Connection lost during upload")));
+    request.addEventListener("error", () => {
+      reject(new Error("The upload service could not be reached. Check your signal and try again."));
+    });
+    request.addEventListener("abort", () => reject(new Error("Upload cancelled.")));
     request.send(form);
   });
 }
 
 export default function UploadMoment() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
   const [uploads, setUploads] = useState<UploadState[]>([]);
-  const [guestName, setGuestName] = useState("");
-  const [message, setMessage] = useState("");
-  const [moment, setMoment] = useState("The celebration");
-  const [consent, setConsent] = useState(false);
   const [formError, setFormError] = useState("");
   const [complete, setComplete] = useState(false);
   const uploading = uploads.some((item) => item.status === "uploading");
@@ -87,6 +113,29 @@ export default function UploadMoment() {
     () => uploads.reduce((sum, upload) => sum + upload.file.size, 0),
     [uploads],
   );
+
+  useEffect(() => {
+    function openUploader() {
+      setOpen(true);
+    }
+    window.addEventListener(OPEN_UPLOAD_EVENT, openUploader);
+    return () => window.removeEventListener(OPEN_UPLOAD_EVENT, openUploader);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape" && !uploading) setOpen(false);
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [open, uploading]);
 
   function chooseFiles(event: ChangeEvent<HTMLInputElement>) {
     setFormError("");
@@ -98,40 +147,48 @@ export default function UploadMoment() {
       const isVideo = file.type.startsWith("video/");
       if (!isImage && !isVideo) continue;
       if ((isImage && file.size > IMAGE_LIMIT) || (isVideo && file.size > VIDEO_LIMIT)) {
-        setFormError(`${file.name} is too large. Photos can be 15 MB and videos 150 MB.`);
+        setFormError(`${file.name} is too large. Photos can be 15 MB and videos 95 MB.`);
         continue;
       }
       accepted.push({ file, progress: 0, status: "ready" });
     }
-    if (incoming.length > MAX_FILES) setFormError(`Please choose up to ${MAX_FILES} files at a time.`);
+    if (incoming.length > MAX_FILES) {
+      setFormError(`Please choose up to ${MAX_FILES} files at a time.`);
+    }
     setUploads(accepted);
   }
 
   function updateUpload(index: number, update: Partial<UploadState>) {
-    setUploads((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, ...update } : item));
+    setUploads((current) => current.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, ...update } : item
+    )));
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError("");
     setComplete(false);
-    if (!guestName.trim()) return setFormError("Please tell us your name.");
     if (!uploads.length) return setFormError("Choose at least one photo or video.");
-    if (!consent) return setFormError("Please confirm that we may include these moments in the wedding keepsake.");
+
+    let config: UploadConfig;
+    try {
+      const response = await fetch("/api/uploads/sign", { method: "POST" });
+      const payload = (await response.json()) as UploadConfig & { error?: string };
+      if (!response.ok) throw new Error(payload.error || "The upload service is unavailable.");
+      config = payload;
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "The upload service is unavailable.");
+      return;
+    }
 
     let failures = 0;
     for (let index = 0; index < uploads.length; index += 1) {
       if (uploads[index].status === "done") continue;
       updateUpload(index, { status: "uploading", progress: 1, error: undefined });
       try {
-        const response = await fetch("/api/uploads/sign", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ guestName, message, moment }),
+        await uploadToCloudinary(uploads[index].file, config, (progress) => {
+          updateUpload(index, { progress });
         });
-        const payload = (await response.json()) as SignResponse & { error?: string };
-        if (!response.ok) throw new Error(payload.error || "The upload service is unavailable.");
-        await uploadToCloudinary(uploads[index].file, payload, (progress) => updateUpload(index, { progress }));
         updateUpload(index, { status: "done", progress: 100 });
       } catch (error) {
         failures += 1;
@@ -141,102 +198,138 @@ export default function UploadMoment() {
         });
       }
     }
-    if (failures) setFormError(`${failures} file${failures === 1 ? "" : "s"} could not be uploaded. You can try again.`);
-    else setComplete(true);
+    if (failures) {
+      setFormError(`${failures} file${failures === 1 ? "" : "s"} could not be uploaded. Tap send to try again.`);
+    } else {
+      setComplete(true);
+    }
   }
 
   function reset() {
     setUploads([]);
-    setMessage("");
-    setConsent(false);
+    setFormError("");
     setComplete(false);
     if (inputRef.current) inputRef.current.value = "";
   }
 
+  function closeModal() {
+    if (uploading) return;
+    setOpen(false);
+    reset();
+  }
+
+  if (!open) return null;
+
   return (
-    <section className="uploadSection" id="upload" aria-labelledby="upload-title">
-      <div className="uploadIntro">
-        <p className="eyebrow lightEyebrow">Your point of view</p>
-        <h2 id="upload-title">See it.<br />Save it.<br /><em>Share it.</em></h2>
-        <p>
-          The loud moments, the soft ones, and everything in between. Add the
-          photographs and short videos that feel like today.
-        </p>
-        <div className="privacyNote">
-          <span aria-hidden="true">✦</span>
-          <p><strong>Shared with care</strong>Your uploads go to the couple&apos;s private gallery and may be selected for their Calmcraft wedding magazine.</p>
-        </div>
-      </div>
+    <div className="uploadModalBackdrop">
+      <section
+        className="uploadDialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="upload-title"
+      >
+        <button
+          ref={closeRef}
+          type="button"
+          className="uploadClose"
+          onClick={closeModal}
+          disabled={uploading}
+          aria-label="Close upload window"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
 
-      <form className="uploadForm" onSubmit={submit}>
-        {complete ? (
-          <div className="uploadSuccess" role="status">
-            <span aria-hidden="true">✓</span>
-            <p className="eyebrow">Moment received</p>
-            <h3>Thank you, {guestName.split(" ")[0]}.</h3>
-            <p>Your perspective is now part of Deborah and Iyanuoluwa&apos;s story.</p>
-            <button type="button" className="secondaryButton" onClick={reset}>Share another moment</button>
+        <div className="uploadIntro">
+          <p className="eyebrow lightEyebrow">Your point of view</p>
+          <h2 id="upload-title">See it.<br />Save it.<br /><em>Share it.</em></h2>
+          <p>
+            One photograph is enough. Choose it, send it, and return to the celebration.
+            No names, captions or forms required.
+          </p>
+          <div className="privacyNote">
+            <span aria-hidden="true">✦</span>
+            <p><strong>Shared with care</strong>Your moments go directly to the couple&apos;s private gallery.</p>
           </div>
-        ) : (
-          <>
-            <div className="fieldRow">
-              <label>
-                <span>Your name</span>
-                <input value={guestName} onChange={(event) => setGuestName(event.target.value)} maxLength={80} autoComplete="name" placeholder="How should we credit you?" />
-              </label>
-              <label>
-                <span>What did you capture?</span>
-                <select value={moment} onChange={(event) => setMoment(event.target.value)}>
-                  <option>The celebration</option>
-                  <option>The couple</option>
-                  <option>Family & friends</option>
-                  <option>Food & details</option>
-                  <option>The dance floor</option>
-                  <option>A message for the couple</option>
-                </select>
-              </label>
-            </div>
+        </div>
 
-            <label className="dropzone">
-              <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,video/mp4,video/quicktime,video/webm" multiple onChange={chooseFiles} />
-              <span className="dropIcon"><CameraIcon /></span>
-              <strong>{uploads.length ? "Choose different files" : "Add photos or short videos"}</strong>
-              <small>Tap to open your camera roll · up to 8 files</small>
-            </label>
-
-            {uploads.length > 0 && (
-              <div className="uploadQueue" aria-label="Files ready to upload">
-                <div className="queueSummary"><strong>{uploads.length} selected</strong><span>{prettyBytes(totalSize)}</span></div>
-                {uploads.map((upload) => (
-                  <div className={`queueItem ${upload.status}`} key={`${upload.file.name}-${upload.file.lastModified}`}>
-                    <span className="fileType">{upload.file.type.startsWith("video/") ? "VID" : "IMG"}</span>
-                    <div><strong>{upload.file.name}</strong><small>{upload.status === "error" ? upload.error : prettyBytes(upload.file.size)}</small></div>
-                    <span className="fileStatus">{upload.status === "done" ? "✓" : upload.status === "uploading" ? `${upload.progress}%` : upload.status === "error" ? "!" : "Ready"}</span>
-                    {upload.status === "uploading" && <span className="progressBar" style={{ width: `${upload.progress}%` }} />}
-                  </div>
-                ))}
+        <form className="uploadForm" onSubmit={submit}>
+          {complete ? (
+            <div className="uploadSuccess" role="status">
+              <span aria-hidden="true">✓</span>
+              <p className="eyebrow">Moment received</p>
+              <h3>Now it&apos;s part of the story.</h3>
+              <p>Thank you for sharing the celebration from your point of view.</p>
+              <div className="successActions">
+                <button type="button" className="secondaryButton" onClick={reset}>Share another</button>
+                <button type="button" className="secondaryButton solidButton" onClick={closeModal}>Done</button>
               </div>
-            )}
+            </div>
+          ) : (
+            <>
+              <div className="quickUploadHeading">
+                <p className="eyebrow">Quick upload</p>
+                <h3>Add one photo or a few moments.</h3>
+                <p>Photos and short videos are welcome.</p>
+              </div>
 
-            <label className="messageField">
-              <span>A note for Deborah & Iyanuoluwa <small>Optional</small></span>
-              <textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={300} placeholder="A memory, a wish, or the story behind the shot…" />
-            </label>
+              <label className="dropzone">
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic,video/mp4,video/quicktime,video/webm"
+                  multiple
+                  onChange={chooseFiles}
+                />
+                <span className="dropIcon"><CameraIcon /></span>
+                <strong>{uploads.length ? "Choose different files" : "Choose from your camera roll"}</strong>
+                <small>One file is enough · up to 8 at once</small>
+              </label>
 
-            <label className="consentField">
-              <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} />
-              <span>I took or have permission to share these files, and I&apos;m happy for the couple to save them and consider them for their wedding keepsake.</span>
-            </label>
+              {uploads.length > 0 && (
+                <div className="uploadQueue" aria-label="Files ready to upload">
+                  <div className="queueSummary">
+                    <strong>{uploads.length} selected</strong>
+                    <span>{prettyBytes(totalSize)}</span>
+                  </div>
+                  {uploads.map((upload) => (
+                    <div className={`queueItem ${upload.status}`} key={`${upload.file.name}-${upload.file.lastModified}`}>
+                      <span className="fileType">{upload.file.type.startsWith("video/") ? "VID" : "IMG"}</span>
+                      <div>
+                        <strong>{upload.file.name}</strong>
+                        <small>{upload.status === "error" ? upload.error : prettyBytes(upload.file.size)}</small>
+                      </div>
+                      <span className="fileStatus">
+                        {upload.status === "done" ? "✓" : upload.status === "uploading" ? `${upload.progress}%` : upload.status === "error" ? "!" : "Ready"}
+                      </span>
+                      {upload.status === "uploading" && <span className="progressBar" style={{ width: `${upload.progress}%` }} />}
+                    </div>
+                  ))}
+                </div>
+              )}
 
-            {formError && <p className="formError" role="alert">{formError}</p>}
-            {completedCount > 0 && !complete && <p className="formNotice" role="status">{completedCount} of {uploads.length} files uploaded.</p>}
-            <button className="submitButton" type="submit" disabled={uploading}>
-              <span>{uploading ? "Sending your moments…" : "Send to the couple"}</span>
-              <span aria-hidden="true">→</span>
-            </button>
-          </>
-        )}
-      </form>
-    </section>
+              {formError && <p className="formError" role="alert">{formError}</p>}
+              {completedCount > 0 && !complete && (
+                <p className="formNotice" role="status">{completedCount} of {uploads.length} files uploaded.</p>
+              )}
+              <button className="submitButton" type="submit" disabled={uploading || !uploads.length}>
+                <span>
+                  {uploading
+                    ? "Sending your moments…"
+                    : uploads.length === 1
+                      ? "Send this moment"
+                      : uploads.length > 1
+                        ? `Send ${uploads.length} moments`
+                        : "Choose a moment first"}
+                </span>
+                <span aria-hidden="true">→</span>
+              </button>
+              <p className="uploadPermission">
+                By uploading, you confirm that you took these files or have permission to share them.
+              </p>
+            </>
+          )}
+        </form>
+      </section>
+    </div>
   );
 }

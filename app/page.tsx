@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import UploadMoment from "./components/UploadMoment";
+import UploadMoment, { ShareMomentButton } from "./components/UploadMoment";
 
 export const metadata: Metadata = {
   title: "Deborah & Iyanuoluwa | The Wedding Edition",
@@ -85,7 +85,7 @@ export default function Home() {
           <div className="navItems">
             <a href="#story">Our edition</a>
             <a href="#menu">Menu</a>
-            <a className="navShare" href="#upload">Share a moment</a>
+            <ShareMomentButton className="navShare">Share a moment</ShareMomentButton>
           </div>
         </nav>
 
@@ -100,9 +100,9 @@ export default function Home() {
             keep every side of the story.
           </p>
           <div className="heroActions">
-            <a className="primaryAction" href="#upload">
+            <ShareMomentButton className="primaryAction">
               <CameraIcon /> Share a moment
-            </a>
+            </ShareMomentButton>
             <a className="textAction" href="#menu">See today&apos;s menu <span>↓</span></a>
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function Home() {
             thoughtfully curated into Deborah and Iyanuoluwa&apos;s Calmcraft wedding
             magazine — a keepsake told by everyone who was there.
           </p>
-          <a className="inlineLink" href="#upload">Add your perspective <ArrowIcon /></a>
+          <ShareMomentButton className="inlineLink">Add your perspective <ArrowIcon /></ShareMomentButton>
         </div>
         <figure className="storyPortrait">
           <Image
@@ -248,7 +248,7 @@ export default function Home() {
         </div>
       </footer>
 
-      <a className="mobileUpload" href="#upload"><CameraIcon /> Share a moment</a>
+      <ShareMomentButton className="mobileUpload"><CameraIcon /> Share a moment</ShareMomentButton>
     </main>
   );
 }
