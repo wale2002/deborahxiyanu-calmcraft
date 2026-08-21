@@ -22,6 +22,7 @@ type UploadConfig = {
   uploadPreset: string;
   folder: string;
   tags: string;
+  context?: string;
 };
 
 const OPEN_UPLOAD_EVENT = "calmcraft:open-upload";
@@ -92,6 +93,7 @@ function uploadToCloudinary(
     form.append("upload_preset", config.uploadPreset);
     form.append("folder", config.folder);
     form.append("tags", config.tags);
+    if (config.context) form.append("context", config.context);
 
     const request = new XMLHttpRequest();
     request.open("POST", `https://api.cloudinary.com/v1_1/${config.cloudName}/auto/upload`);
@@ -112,11 +114,13 @@ function uploadToCloudinary(
 
 function uploadThroughWeddingSite(
   file: File,
+  caption: string,
   onProgress: (value: number) => void,
 ) {
   return new Promise<void>((resolve, reject) => {
     const form = new FormData();
     form.append("file", file);
+    if (caption.trim()) form.append("caption", caption.trim());
 
     const request = new XMLHttpRequest();
     request.open("POST", "/api/uploads/proxy");
@@ -142,6 +146,7 @@ export default function UploadMoment() {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [uploads, setUploads] = useState<UploadState[]>([]);
+  const [caption, setCaption] = useState("");
   const [formError, setFormError] = useState("");
   const [complete, setComplete] = useState(false);
   const uploading = uploads.some((item) => item.status === "uploading");
@@ -210,7 +215,11 @@ export default function UploadMoment() {
 
     let config: UploadConfig;
     try {
-      const response = await fetch("/api/uploads/sign", { method: "POST" });
+      const response = await fetch("/api/uploads/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caption }),
+      });
       const payload = (await response.json()) as UploadConfig & { error?: string };
       if (!response.ok) throw new Error(payload.error || "The upload service is unavailable.");
       config = payload;
@@ -236,7 +245,7 @@ export default function UploadMoment() {
             );
           }
           updateUpload(index, { progress: 2 });
-          await uploadThroughWeddingSite(file, onProgress);
+          await uploadThroughWeddingSite(file, caption, onProgress);
         }
         updateUpload(index, { status: "done", progress: 100 });
       } catch (error) {
@@ -256,6 +265,7 @@ export default function UploadMoment() {
 
   function reset() {
     setUploads([]);
+    setCaption("");
     setFormError("");
     setComplete(false);
     if (inputRef.current) inputRef.current.value = "";
@@ -356,6 +366,16 @@ export default function UploadMoment() {
                 </div>
               )}
 
+              <label className="messageField">
+                <span>Caption <small>Optional</small></span>
+                <textarea
+                  value={caption}
+                  onChange={(event) => setCaption(event.target.value)}
+                  maxLength={180}
+                  placeholder="Add the story behind this moment…"
+                />
+              </label>
+
               {formError && <p className="formError" role="alert">{formError}</p>}
               {completedCount > 0 && !complete && (
                 <p className="formNotice" role="status">{completedCount} of {uploads.length} files uploaded.</p>
@@ -375,6 +395,9 @@ export default function UploadMoment() {
               <p className="uploadPermission">
                 By uploading, you confirm that you took these files or have permission to share them.
               </p>
+              <a className="uploadContact" href="tel:+2348085732615">
+                Need help? Call 0808 573 2615
+              </a>
             </>
           )}
         </form>

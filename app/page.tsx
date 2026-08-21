@@ -239,7 +239,10 @@ export default function Home() {
         <div className="footerTop">
           <div className="wordmark footerMark"><span>Calmcraft</span><strong>The Wedding Edition</strong></div>
           <p>Thank you for being part of our beginning.</p>
-          <a href="/our-moments">Couple&apos;s gallery <ArrowIcon /></a>
+          <div className="footerLinks">
+            <a href="tel:+2348085732615">Call · 0808 573 2615</a>
+            <a href="/our-moments">Couple&apos;s gallery <ArrowIcon /></a>
+          </div>
         </div>
         <div className="footerBottom">
           <span>Deborah & Iyanuoluwa</span>

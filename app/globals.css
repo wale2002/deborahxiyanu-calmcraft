@@ -199,7 +199,7 @@ h1 span { font-style: italic; }
   text-decoration: none;
   text-transform: uppercase;
 }
-.inlineLink svg, .footerTop a svg { width: 20px; fill: none; stroke: currentColor; stroke-width: 1.4; }
+.inlineLink svg, .footerLinks a svg { width: 20px; fill: none; stroke: currentColor; stroke-width: 1.4; }
 .storyPortrait { margin: 45px 0 0; }
 .storyPortrait img { display: block; width: 100%; aspect-ratio: 0.73; object-fit: cover; object-position: 53% 50%; filter: saturate(0.85); }
 .storyPortrait figcaption { margin-top: 13px; font-family: var(--serif); font-size: 0.82rem; font-style: italic; }
@@ -313,6 +313,7 @@ h1 span { font-style: italic; }
 .submitButton { display: flex; width: 100%; min-height: 58px; align-items: center; justify-content: space-between; margin-top: 28px; padding: 0 23px; background: var(--wine); color: #fff; }
 .submitButton:disabled { cursor: wait; opacity: .65; }
 .uploadPermission { margin: 12px auto 0; max-width: 460px; color: rgba(44,39,37,.5); font-size: .61rem; line-height: 1.5; text-align: center; }
+.uploadContact { display: block; width: fit-content; margin: 10px auto 0; color: var(--wine); font-size: .61rem; font-weight: 700; letter-spacing: .08em; text-underline-offset: 4px; text-transform: uppercase; }
 .uploadSuccess { display: flex; min-height: 500px; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
 .uploadSuccess > span { display: grid; width: 66px; height: 66px; place-items: center; margin-bottom: 28px; border-radius: 50%; background: var(--wine); color: white; font-family: var(--serif); font-size: 1.8rem; }
 .uploadSuccess h3 { margin: 17px 0; font-family: var(--serif); font-size: clamp(2.4rem, 5vw, 4rem); font-weight: 400; letter-spacing: -.04em; }
@@ -344,7 +345,8 @@ h1 span { font-style: italic; }
 .footerTop { display: grid; grid-template-columns: .6fr 1.2fr .6fr; gap: 30px; align-items: center; min-height: 170px; }
 .footerMark span { color: var(--blush); }
 .footerTop > p { margin: 0; font-family: var(--serif); font-size: clamp(1.8rem, 3.6vw, 4rem); font-style: italic; line-height: 1.1; text-align: center; }
-.footerTop > a { display: inline-flex; align-items: center; justify-content: flex-end; gap: 12px; font-size: .65rem; font-weight: 700; letter-spacing: .13em; text-underline-offset: 7px; text-transform: uppercase; }
+.footerLinks { display: flex; align-items: flex-end; flex-direction: column; gap: 18px; }
+.footerLinks a { display: inline-flex; align-items: center; justify-content: flex-end; gap: 12px; font-size: .65rem; font-weight: 700; letter-spacing: .13em; text-underline-offset: 7px; text-transform: uppercase; }
 .footerBottom { display: flex; justify-content: space-between; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.57); }
 .mobileUpload { display: none; }
 
@@ -447,7 +449,8 @@ h1 span { font-style: italic; }
   .footer { padding: 55px 24px 20px; }
   .footerTop { display: flex; min-height: 300px; align-items: flex-start; flex-direction: column; }
   .footerTop > p { margin: auto 0; text-align: left; }
-  .footerTop > a { justify-content: flex-start; }
+  .footerLinks { align-items: flex-start; }
+  .footerLinks a { justify-content: flex-start; }
   .footerBottom { align-items: flex-start; flex-direction: column; gap: 10px; line-height: 1.5; }
   .mobileUpload { position: fixed; z-index: 20; right: 12px; bottom: 10px; left: 12px; display: flex; height: 52px; align-items: center; justify-content: center; gap: 10px; border: 0; background: var(--wine); box-shadow: 0 10px 30px rgba(39,20,25,.32); color: white; cursor: pointer; font-family: inherit; font-size: .66rem; font-weight: 700; letter-spacing: .12em; text-decoration: none; text-transform: uppercase; }
   .mobileUpload svg { width: 18px; }

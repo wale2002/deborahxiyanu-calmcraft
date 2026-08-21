@@ -30,6 +30,17 @@ test("blocked third-party uploads retry through a constrained same-site route", 
   assert.match(proxy, /ALLOWED_TYPES\.has\(file\.type\)/);
 });
 
+test("captions remain optional and are sanitized before storage", async () => {
+  const component = await readFile(new URL("app/components/UploadMoment.tsx", root), "utf8");
+  const configRoute = await readFile(new URL("app/api/uploads/sign/route.ts", root), "utf8");
+  const proxy = await readFile(new URL("app/api/uploads/proxy/route.ts", root), "utf8");
+  assert.match(component, /Caption <small>Optional<\/small>/);
+  const captionField = component.match(/<textarea[\s\S]*?placeholder="Add the story behind this moment…"[\s\S]*?\/>/)?.[0] || "";
+  assert.equal(captionField.includes("required"), false);
+  assert.match(configRoute, /sanitizeContext\(body\.caption, 180\)/);
+  assert.match(proxy, /sanitizeContext\(incoming\.get\("caption"\), 180\)/);
+});
+
 test("gallery sessions use HTTP-only cookies", async () => {
   const auth = await readFile(new URL("app/lib/gallery-auth.ts", root), "utf8");
   assert.match(auth, /httpOnly:\s*true/);

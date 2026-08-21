@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   cloudinaryUploadConfig,
+  sanitizeContext,
   WEDDING_FOLDER,
 } from "../../../lib/cloudinary";
 
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
   }
 
   const file = incoming.get("file");
+  const caption = sanitizeContext(incoming.get("caption"), 180);
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Choose a photo or video first." }, { status: 400 });
   }
@@ -59,6 +61,7 @@ export async function POST(request: Request) {
   outbound.append("upload_preset", config.uploadPreset);
   outbound.append("folder", WEDDING_FOLDER);
   outbound.append("tags", "deborah-iyanu,wedding-guest");
+  if (caption) outbound.append("context", `message=${caption}`);
 
   let response: Response;
   try {
