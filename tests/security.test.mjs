@@ -47,6 +47,18 @@ test("gallery sessions use HTTP-only cookies", async () => {
   assert.match(auth, /sameSite:\s*"lax"/);
 });
 
+test("gallery reads sign out quietly and deletion stays authenticated and scoped", async () => {
+  const galleryRoute = await readFile(new URL("app/api/gallery/route.ts", root), "utf8");
+  const cloudinary = await readFile(new URL("app/lib/cloudinary.ts", root), "utf8");
+  const galleryPage = await readFile(new URL("app/our-moments/page.tsx", root), "utf8");
+  assert.match(galleryRoute, /authenticated: false, assets: \[\]/);
+  assert.match(galleryRoute, /export async function DELETE/);
+  assert.match(galleryRoute, /if \(!\(await hasGallerySession\(\)\)\)/);
+  assert.match(cloudinary, /publicId\.startsWith\(`\$\{WEDDING_FOLDER\}\/`\)/);
+  assert.match(cloudinary, /\$\{resourceType\}\/destroy/);
+  assert.match(galleryPage, /Delete this moment permanently\?/);
+});
+
 test("repository ignores local environment files but keeps the example", async () => {
   const ignore = await readFile(new URL(".gitignore", root), "utf8");
   assert.match(ignore, /^\.env\*/m);

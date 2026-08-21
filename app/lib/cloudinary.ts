@@ -167,3 +167,36 @@ export async function setMagazineSelection(
   );
   if (!response.ok) throw new Error(`Could not update magazine selection (${response.status})`);
 }
+
+export async function deleteGalleryAsset(
+  publicId: string,
+  resourceType: "image" | "video",
+) {
+  const config = cloudinaryConfig();
+  if (!config) throw new Error("Cloudinary is not configured");
+  if (!publicId.startsWith(`${WEDDING_FOLDER}/`)) throw new Error("Invalid asset");
+
+  const timestamp = Math.floor(Date.now() / 1000);
+  const params = { invalidate: "true", public_id: publicId, timestamp };
+  const signature = await signCloudinaryParams(params, config.apiSecret);
+  const form = new URLSearchParams({
+    invalidate: "true",
+    public_id: publicId,
+    timestamp: String(timestamp),
+    api_key: config.apiKey,
+    signature,
+  });
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${config.cloudName}/${resourceType}/destroy`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form,
+    },
+  );
+  const payload = (await response.json()) as { result?: string };
+  if (!response.ok || !["ok", "not found"].includes(payload.result || "")) {
+    throw new Error(`Could not delete gallery asset (${response.status})`);
+  }
+  return payload.result;
+}

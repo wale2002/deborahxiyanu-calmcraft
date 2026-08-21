@@ -22,6 +22,11 @@ type Asset = {
 };
 
 type Filter = "all" | "image" | "video" | "shortlist";
+type GalleryPayload = {
+  authenticated?: boolean;
+  assets?: Asset[];
+  error?: string;
+};
 
 function Wordmark() {
   return (
@@ -42,13 +47,14 @@ export default function CoupleGallery() {
   const [error, setError] = useState("");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
 
   async function loadGallery() {
     setError("");
     const response = await fetch("/api/gallery", { cache: "no-store" });
-    const payload = (await response.json()) as { assets?: Asset[]; error?: string };
-    if (response.status === 401) {
+    const payload = (await response.json()) as GalleryPayload;
+    if (payload.authenticated === false || response.status === 401) {
       setAuthorised(false);
       return;
     }
@@ -64,10 +70,10 @@ export default function CoupleGallery() {
   useEffect(() => {
     let active = true;
     void fetch("/api/gallery", { cache: "no-store" })
-      .then(async (response) => ({ response, payload: (await response.json()) as { assets?: Asset[]; error?: string } }))
+      .then(async (response) => ({ response, payload: (await response.json()) as GalleryPayload }))
       .then(({ response, payload }) => {
         if (!active) return;
-        if (response.status === 401) setAuthorised(false);
+        if (payload.authenticated === false || response.status === 401) setAuthorised(false);
         else if (!response.ok) {
           setAuthorised(true);
           setError(payload.error || "The gallery could not be loaded.");
@@ -124,6 +130,37 @@ export default function CoupleGallery() {
       setAssets((current) => current.map((item) => item.id === asset.id ? { ...item, selected: !selected } : item));
       const payload = (await response.json()) as { error?: string };
       setError(payload.error || "Could not update the shortlist.");
+    }
+  }
+
+  async function deleteMoment(asset: Asset) {
+    const confirmed = window.confirm(
+      "Delete this moment permanently? It will be removed from Cloudinary and cannot be recovered.",
+    );
+    if (!confirmed) return;
+
+    setDeletingId(asset.id);
+    setError("");
+    try {
+      const response = await fetch("/api/gallery", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publicId: asset.publicId, resourceType: asset.resourceType }),
+      });
+      const payload = (await response.json()) as { deleted?: boolean; error?: string };
+      if (response.status === 401) {
+        setAssets([]);
+        setAuthorised(false);
+        throw new Error("Your private session expired. Please open the gallery again.");
+      }
+      if (!response.ok || !payload.deleted) {
+        throw new Error(payload.error || "The moment could not be deleted.");
+      }
+      setAssets((current) => current.filter((item) => item.id !== asset.id));
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "The moment could not be deleted.");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -221,6 +258,14 @@ export default function CoupleGallery() {
                   {asset.selected ? "♥ Shortlisted" : "♡ Magazine"}
                 </button>
                 <a href={asset.downloadUrl} download>Download</a>
+                <button
+                  type="button"
+                  className="deleteButton"
+                  onClick={() => deleteMoment(asset)}
+                  disabled={deletingId === asset.id}
+                >
+                  {deletingId === asset.id ? "Deleting…" : "Delete"}
+                </button>
               </div>
             </article>
           ))}

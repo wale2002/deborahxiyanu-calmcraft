@@ -386,6 +386,8 @@ h1 span { font-style: italic; }
 .mediaButtons { display: flex; gap: 8px; padding: 0 15px 15px; }
 .mediaButtons button, .mediaButtons a { display: inline-flex; min-height: 34px; align-items: center; justify-content: center; border: 1px solid var(--line); padding: 0 10px; background: transparent; color: inherit; cursor: pointer; font-size: .58rem; font-weight: 700; letter-spacing: .08em; text-decoration: none; text-transform: uppercase; }
 .mediaButtons .selected { border-color: var(--wine); background: var(--wine); color: #fff; }
+.mediaButtons .deleteButton { margin-left: auto; border-color: rgba(161,28,53,.35); color: #a11c35; }
+.mediaButtons button:disabled { cursor: wait; opacity: .55; }
 .galleryEmpty { margin: 60px 7vw 120px; border: 1px solid var(--line); padding: 80px 30px; text-align: center; }
 .galleryEmpty h2 { font-size: clamp(2.5rem, 5vw, 5rem); }
 .galleryEmpty p { font-family: var(--serif); }
