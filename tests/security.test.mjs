@@ -20,6 +20,16 @@ test("guest uploads require only a selected file", async () => {
   assert.equal(route.includes("apiKey"), false);
 });
 
+test("blocked third-party uploads retry through a constrained same-site route", async () => {
+  const component = await readFile(new URL("app/components/UploadMoment.tsx", root), "utf8");
+  const proxy = await readFile(new URL("app/api/uploads/proxy/route.ts", root), "utf8");
+  assert.match(component, /\/api\/uploads\/proxy/);
+  assert.match(component, /DirectUploadBlockedError/);
+  assert.match(proxy, /PROXY_UPLOAD_LIMIT = 3_500_000/);
+  assert.match(proxy, /requestOrigin !== siteOrigin/);
+  assert.match(proxy, /ALLOWED_TYPES\.has\(file\.type\)/);
+});
+
 test("gallery sessions use HTTP-only cookies", async () => {
   const auth = await readFile(new URL("app/lib/gallery-auth.ts", root), "utf8");
   assert.match(auth, /httpOnly:\s*true/);

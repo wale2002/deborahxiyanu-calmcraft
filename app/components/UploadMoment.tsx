@@ -28,6 +28,14 @@ const OPEN_UPLOAD_EVENT = "calmcraft:open-upload";
 const MAX_FILES = 8;
 const IMAGE_LIMIT = 15 * 1024 * 1024;
 const VIDEO_LIMIT = 95 * 1024 * 1024;
+const PROXY_UPLOAD_LIMIT = 3_500_000;
+
+class DirectUploadBlockedError extends Error {
+  constructor() {
+    super("The browser blocked the direct upload.");
+    this.name = "DirectUploadBlockedError";
+  }
+}
 
 export function ShareMomentButton({
   className,
@@ -61,9 +69,12 @@ function prettyBytes(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function cloudinaryError(request: XMLHttpRequest) {
+function uploadError(request: XMLHttpRequest) {
   try {
-    const payload = JSON.parse(request.responseText) as { error?: { message?: string } };
+    const payload = JSON.parse(request.responseText) as {
+      error?: string | { message?: string };
+    };
+    if (typeof payload.error === "string") return payload.error;
     return payload.error?.message || `Upload failed (${request.status})`;
   } catch {
     return `Upload failed (${request.status})`;
@@ -89,10 +100,37 @@ function uploadToCloudinary(
     });
     request.addEventListener("load", () => {
       if (request.status >= 200 && request.status < 300) resolve();
-      else reject(new Error(cloudinaryError(request)));
+      else reject(new Error(uploadError(request)));
     });
     request.addEventListener("error", () => {
-      reject(new Error("The upload service could not be reached. Check your signal and try again."));
+      reject(new DirectUploadBlockedError());
+    });
+    request.addEventListener("abort", () => reject(new Error("Upload cancelled.")));
+    request.send(form);
+  });
+}
+
+function uploadThroughWeddingSite(
+  file: File,
+  onProgress: (value: number) => void,
+) {
+  return new Promise<void>((resolve, reject) => {
+    const form = new FormData();
+    form.append("file", file);
+
+    const request = new XMLHttpRequest();
+    request.open("POST", "/api/uploads/proxy");
+    request.upload.addEventListener("progress", (event) => {
+      if (event.lengthComputable) {
+        onProgress(Math.min(90, Math.round((event.loaded / event.total) * 90)));
+      }
+    });
+    request.addEventListener("load", () => {
+      if (request.status >= 200 && request.status < 300) resolve();
+      else reject(new Error(uploadError(request)));
+    });
+    request.addEventListener("error", () => {
+      reject(new Error("The connection dropped before the file reached us. Please try again."));
     });
     request.addEventListener("abort", () => reject(new Error("Upload cancelled.")));
     request.send(form);
@@ -186,9 +224,20 @@ export default function UploadMoment() {
       if (uploads[index].status === "done") continue;
       updateUpload(index, { status: "uploading", progress: 1, error: undefined });
       try {
-        await uploadToCloudinary(uploads[index].file, config, (progress) => {
-          updateUpload(index, { progress });
-        });
+        const file = uploads[index].file;
+        const onProgress = (progress: number) => updateUpload(index, { progress });
+        try {
+          await uploadToCloudinary(file, config, onProgress);
+        } catch (error) {
+          if (!(error instanceof DirectUploadBlockedError)) throw error;
+          if (file.size > PROXY_UPLOAD_LIMIT) {
+            throw new Error(
+              "This browser blocked the upload. Open this page in Chrome or Safari for larger files.",
+            );
+          }
+          updateUpload(index, { progress: 2 });
+          await uploadThroughWeddingSite(file, onProgress);
+        }
         updateUpload(index, { status: "done", progress: 100 });
       } catch (error) {
         failures += 1;
